@@ -118,17 +118,35 @@ colnames(royer_data_fossil_int)[colnames(royer_data_fossil_int)=="Group.1"] <- "
 rownames(royer_data_fossil_int)<-royer_data_fossil_int$binomial
 royer_data_fossil_int <- royer_data_fossil_int[-c(1)]
 
-saveRDS(royer_data_fossil_int, file="~/Documents/BEIN data R/data/processed/04_royer_data_fossil_int")
-
-
-
 #final dataframe creation-------------------------------------------------------------------------------------------------
 final_WSLA_DF <- WSLA_fixed_lrgcount[ -c(2,4:13) ]
 colnames(final_WSLA_DF)[colnames(final_WSLA_DF)=="trait_value"] <- "SLA"
+
+#creating of trees-------------------------------------------------------------------------------------------------
+tree_plant <- read.tree('~/Documents/BEIN data R/data/raw/phylodata/Vascular_Plants_rooted.dated.tre')
+tree_tips <- tree_plant$tip.label
+###### all tips in og tree
+tree_tips_df <- as.data.frame(tree_tips) 
+###### makes a dataframe
+colnames(tree_tips_df)[colnames(tree_tips_df)=="tree.tips"] <- "binomial"
+
+all_species_df <- as.data.frame(unique(final_WSLA_DF$binomial))
+colnames(all_species_df)[colnames(all_species_df)=="unique(final_WSLA_DF$binomial)"] <- "binomial"
+
+not_in_WSLA <- subset(tree_tips, !(tree_tips %in% all_species_df$binomial))
+####subset of stuff that isn't in all.species.df but is in the tree
+#########this subseting function is so important
+
+tree_WSLA_species <- drop.tip(tree_plant, not_in_WSLA)
+WSLA_tree_tips <- tree_WSLA_species$tip.label
+WSLA_tree_tips_df <- as.data.frame(WSLA_tree_tips)
+#####plots Zanne tree
+#####drops non WSLA bionomials
 
 #clean data saving-------------------------------------------------------------------------------------------------
 saveRDS(WSLA_raw, file="~/Documents/BEIN data R/data/processed/00_WSLAraw.rds")
 saveRDS(WSLA, file="~/Documents/BEIN data R/data/processed/02_WSLAPhen.rds")
 saveRDS(WSLA_fixed_lrgcount, file="~/Documents/BEIN data R/data/processed/02_family_count.rds")
 saveRDS(final_WSLA_DF, file = "~/Documents/BEIN data R/data/processed/03_finalWSLADF.rds")
-
+saveRDS(royer_data_fossil_int, file="~/Documents/BEIN data R/data/processed/04_royer_data_fossil_int")
+write.tree(tree_WSLA_species, file = "~/Documents/BEIN data R/data/processed/03_WSLA_species.tre")

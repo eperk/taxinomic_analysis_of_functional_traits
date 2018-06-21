@@ -1,36 +1,8 @@
-require(tidyr)
-require(dplyr)
-require(phangorn)
-require(ape)
-require(phytools)
-require(phylolm)
-require(nlme)
+#load tree and files-------------------------------------------------------------------------------------------------
+tree_WSLA_species <- read.tree("~/Documents/BEIN data R/data/processed/03_WSLA_species.tre")
+final_WSLA_DF <- readRDS("~/Documents/BEIN data R/data/processed/03_finalWSLADF.rds")
 
-
-final_WSLA_DF <- readRDS("./data/finalWSLADF.rds")
-tree_plant <- read.tree('Vascular_Plants_rooted.dated.tre')
-tree_tips <- tree_plant$tip.label
-###### all tips in og tree
-tree_tips_df <- as.data.frame(tree_tips) 
-###### makes a dataframe
-colnames(tree_tips_df)[colnames(tree_tips_df)=="tree.tips"] <- "binomial"
-
-all_species_df <- as.data.frame(unique(final_WSLA_DF$binomial))
-colnames(all_species_df)[colnames(all_species_df)=="unique(final_WSLA_DF$binomial)"] <- "binomial"
-
-not_in_WSLA <- subset(tree_tips, !(tree_tips %in% all_species_df$binomial))
-####subset of stuff that isn't in all.species.df but is in the tree
-#########this subseting function is so important
-
-tree_WSLA_species <- drop.tip(tree_plant, not_in_WSLA)
-plot(tree_WSLA_species, type = "fan", show.tip.label = FALSE)
-WSLA_tree_tips <- tree_WSLA_species$tip.label
-WSLA_tree_tips_df <- as.data.frame(WSLA_tree_tips)
-#####plots Zanne tree
-#####drops non WSLA bionomials
-
-
-###########sla anc analysis
+#sla anc analysis-------------------------------------------------------------------------------------------------
 SLA_only <- final_WSLA_DF [-c(3:6)]
 SLA_only$SLA<- as.numeric(SLA_only$SLA)
 SLA_only_means <- aggregate(SLA_only[,-1], by=list(SLA_only$binomial), mean)
@@ -40,14 +12,13 @@ SLA_mean_tree_binomials <- subset(SLA_only_means, SLA_only_means$binomial %in% W
 SLA_labels <- SLA_mean_tree_binomials[,-1]
 SLA_labels <- as.data.frame(SLA_labels)
 rownames(SLA_labels) <- SLA_mean_tree_binomials[,1]
-
 SLA <-as.matrix(SLA_labels)[,1]
 SLA_fastAnc<-fastAnc(tree_WSLA_species,SLA,vars=TRUE,CI=TRUE)
 SLA_mapping<-contMap(tree_WSLA_species,SLA,plot=FALSE)
 plot(SLA_mapping,type="fan",legend=0.7*max(nodeHeights(tree_WSLA_species)), fsize=c(0.7,0.9))
 
 
-######rosidae fastanc analysis
+#rosidae fastanc analysis-------------------------------------------------------------------------------------------------
 WSLA_tree_nodes <- tree_WSLA_species$node.label
 Rosidae <- as.vector("Rosidae")
 tree_rosidae <- extract.clade(tree_WSLA_species, "Rosidae")
@@ -63,25 +34,24 @@ plot(rosidae_mapping,legend=0.7*max(nodeHeights(tree_rosidae)), fsize=c(0.7,0.9)
 plot(tree_rosidae, type="fan", show.tip.label = FALSE)
 
 
-#######simmap
+#simmap rosidae-------------------------------------------------------------------------------------------------
 species_state <- final_WSLA_DF [-c(2,3,5,6)]
 deduped_states <- unique( species_state[ , 1:2 ] )
 deomited_states <- na.omit(deduped_states)
 species_state_rosidae <- subset(deomited_states, (deomited_states$binomial %in% rosidae_tips))
 species_pheno_rosidae<-species_state_rosidae$Phenology
 
-####simmap tree creation something broke between wednesday and sunday and I cant figure it out
+#simmap tree creation-------------------------------------------------------------------------------------------------
 not_in_rosidae <- subset(rosidae_tips, !(rosidae_tips %in% species_state_rosidae$binomial))
 not_in_rosidae_df <-as.data.frame(not_in_rosidae)
 tree_simmap_rosidae <- drop.tip(tree_rosidae, not_in_rosidae)
 names(species_pheno_rosidae) <- species_state_rosidae$binomial
 
-###########rosidae.state.matrix <-as.matrix(species.state.rosidae)[,2]
+#rosidae simmap-------------------------------------------------------------------------------------------------
 rosidae_simmap <- make.simmap(tree_simmap_rosidae, species_pheno_rosidae, nsim=1)
 plotSimmap(rosidae_simmap, ftype="off")
 
-################################################################################################################
-#########binary vs continous trait phylogenetic logistic regressions
+#binary vs continous trait phylogenetic logistic regressions-------------------------------------------------------------------------------------------------
 SLA_pheno_binomal <- final_WSLA_DF [-c(5:6)]
 SLA_pheno_binomal$SLA<- as.numeric(SLA_pheno_binomal$SLA)
 SLA_LMA_pheno_means <- aggregate(SLA_pheno_binomal[,-1], by=list(SLA_pheno_binomal$binomial), mean)
@@ -90,42 +60,42 @@ SLA_LMA_pheno_means <- left_join(SLA_LMA_pheno_means, Zanne, by= "binomial")
 SLA_LMA_pheno_means <- SLA_LMA_pheno_means [-c(4)]
 colnames(SLA_LMA_pheno_means)[colnames(SLA_LMA_pheno_means)=="Phenology.y"] <- "Phenology"
 SLA_LMA_pheno_means <- na.omit(SLA_LMA_pheno_means)
-rosidae_SLA_LMA_pheno_means <- subset(SLA_LMA_pheno_means, SLA_LMA_pheno_means$binomial %in% rosidae_tips)
 
+#rosidae binary vs continous trait phylogenetic logistic regressions-------------------------------------------------------------------------------------------------
+rosidae_SLA_LMA_pheno_means <- subset(SLA_LMA_pheno_means, SLA_LMA_pheno_means$binomial %in% rosidae_tips)
 rosidae_labels_SLA_LMA <- rosidae_SLA_LMA_pheno_means[,1]
 rosidae_labels_SLA_LMA <- as.data.frame(rosidae_labels_SLA_LMA)
 rownames(rosidae_SLA_LMA_pheno_means) <- rosidae_labels_SLA_LMA[,1]
 
-####Dropping D_EV so binary trait is achieved
+# rosidae Dropping D_EV so binary trait is achieved-------------------------------------------------------------------------------------------------
 rosidae_SLA_LMA_pheno_means <- rosidae_SLA_LMA_pheno_means[!rosidae_SLA_LMA_pheno_means$Phenology == "D_EV", ]
 
+#rosiade tree creation for phylo logistic regression-------------------------------------------------------------------------------------------------
 not_in_rosidae_na_D_EV <- subset(rosidae_tips, !(rosidae_tips %in% rosidae_SLA_LMA_pheno_means$binomial))
 tree_simmap_rosidae_na_D_EV <- drop.tip(tree_rosidae, not_in_rosidae_na_D_EV)
-
 tree_simmap_rosidae_na_D_EV_tips <- tree_simmap_rosidae_na_D_EV$tip.label
 tree_simmap_rosidae_na_D_EV_tips <- as.data.frame(tree_simmap_rosidae_na_D_EV_tips)
-
 rosidae_SLA_LMA_pheno_means <- rosidae_SLA_LMA_pheno_means[ order(match(rosidae_SLA_LMA_pheno_means$binomial, 
               tree_simmap_rosidae_na_D_EV_tips$tree_simmap_rosidae_na_D_EV_tips)), ]
 rosidae_SLA_LMA_pheno_means$Phenology <- as.character(rosidae_SLA_LMA_pheno_means$Phenology)
 
-########NB.  Decidous=1 Evergreen=0 creation of binary factor
+#rosidae Decidous=1 Evergreen=0 creation of binary factor-------------------------------------------------------------------------------------------------
 rosidae_SLA_LMA_pheno_means$Phenology[rosidae_SLA_LMA_pheno_means$Phenology == "D"] <- "1"
 rosidae_SLA_LMA_pheno_means$Phenology[rosidae_SLA_LMA_pheno_means$Phenology == "EV"] <- "0"
 
-###phylogenetic linear regression
+#rosidae phylogenetic linear regression-------------------------------------------------------------------------------------------------
 phylin <- phylolm(SLA~Phenology, data = rosidae_SLA_LMA_pheno_means, phy = tree_simmap_rosidae_na_D_EV)
 summary(phylin)
 plot.phylolm(phylin)
 
 
-###phylogenetic logistic regression
+#rosidae phylogenetic logistic regression-------------------------------------------------------------------------------------------------
 phylog <- phyloglm(as.numeric(Phenology)~SLA, data = rosidae_SLA_LMA_pheno_means, 
                    phy = tree_simmap_rosidae_na_D_EV, method = c("logistic_IG10"))
 summary(phylog)
 plot.phyloglm(phylog)
 
-#ggplot of phylog
+#rosidae ggplot of phylog-------------------------------------------------------------------------------------------------
 coefs <- coef(phylog)
 x_plot <- seq(-50, 50, by = 0.1)
 y_plot <- plogis(coefs[1] + coefs[2] * x_plot)
@@ -138,13 +108,7 @@ ggplot(plot_data) +
   xlab("x") + 
   ylab("p(y | x)")
 
-  
-   #geom_point(data = rosidae.SLA_LMA_pheno_means,
-#             aes(x= as.numeric(Phenology), 
- #                y = SLA))
-
-##############################################################################################################################
-#########binary vs continous trait phylogenetic logistic regressions for all species
+#binary vs continous trait phylogenetic logistic regressions for all species-------------------------------------------------------------------------------------------------
 SLA_pheno_binomal <- final_WSLA_DF [-c(5:6)]
 SLA_pheno_binomal$SLA<- as.numeric(SLA_pheno_binomal$SLA)
 SLA_LMA_pheno_means <- aggregate(SLA_pheno_binomal[,-1], by=list(SLA_pheno_binomal$binomial), mean)
@@ -154,51 +118,50 @@ SLA_LMA_pheno_means <- SLA_LMA_pheno_means [-c(4)]
 colnames(SLA_LMA_pheno_means)[colnames(SLA_LMA_pheno_means)=="Phenology.y"] <- "Phenology"
 SLA_LMA_pheno_means <- na.omit(SLA_LMA_pheno_means)
 all_SLA_LMA_pheno_means <- subset(SLA_LMA_pheno_means, SLA_LMA_pheno_means$binomial %in% WSLA.tree.tips)
-
 all_SLA_LMA_pheno_means_labels <- all_SLA_LMA_pheno_means[,1]
 all_SLA_LMA_pheno_means_labels <- as.data.frame(all_SLA_LMA_pheno_means_labels)
 rownames(all_SLA_LMA_pheno_means) <- all_SLA_LMA_pheno_means_labels[,1]
 
-####Dropping D_EV so binary trait is achieved
+#Dropping D_EV so binary trait is achieved-------------------------------------------------------------------------------------------------
 indx<-which(!all_SLA_LMA_pheno_means$Phenology == "D_EV")
 all_SLA_LMA_pheno_means <- all_SLA_LMA_pheno_means[indx, ]
 
+#allspecies phylo logsitic tree creation-------------------------------------------------------------------------------------------------
 not_in_all_na_D_EV <- subset(WSLA.tree.tips, !(WSLA.tree.tips %in% all_SLA_LMA_pheno_means$binomial))
 tree_WSLA_na_WSLA <- drop.tip(tree_WSLA_species, not_in_all_na_D_EV)
-
 tree_WSLA_na_WSLA_tips <- tree_WSLA_na_WSLA$tip.label
 tree_WSLA_na_WSLA_tips <- as.data.frame(tree_WSLA_na_WSLA_tips)
 
 
-#####matching to tree
+#matching to tree-------------------------------------------------------------------------------------------------
 all_SLA_LMA_pheno_means <- all_SLA_LMA_pheno_means[ order(match(all_SLA_LMA_pheno_means$binomial, 
                                                 tree_WSLA_na_WSLA_tips$tree_WSLA_na_WSLA_tips)), ]
 
-########NB.  Decidous=1 Evergreen=0 creation of binary factor
+#Decidous=1 Evergreen=0 creation of binary factor-------------------------------------------------------------------------------------------------
 all_SLA_LMA_pheno_means$Phenology[all_SLA_LMA_pheno_means$Phenology == "D"] <- "0"
 all_SLA_LMA_pheno_means$Phenology[all_SLA_LMA_pheno_means$Phenology == "EV"] <- "1"
 
-###phylogenetic linear regression
+#phylogenetic linear regression-------------------------------------------------------------------------------------------------
 phylin_all <- phylolm(SLA~Phenology, data = all_SLA_LMA_pheno_means, phy = tree_WSLA_na_WSLA)
 summary(phylin_all)
 plot.phylolm(phylin_all)
 
 
-###phylogenetic logistic regression
+##phylogenetic logistic regression-------------------------------------------------------------------------------------------------
 phylog_all <- phyloglm(as.numeric(Phenology)~SLA, data = all_SLA_LMA_pheno_means, 
                        phy = tree_WSLA_na_WSLA, method = c("logistic_IG10"))
 summary(phylog_all)
 plot.phyloglm(phylog_all)
 
 
-##### phylogenetic logistic regression, log
+#phylogenetic logistic regression, log-------------------------------------------------------------------------------------------------
 phylog_all_log <- phyloglm(as.numeric(Phenology)~log(SLA), data = all_SLA_LMA_pheno_means, phy = tree_WSLA_na_WSLA, method = c("logistic_IG10"))
 summary(phylog_all_log)
 plot.phyloglm(phylog_all_log)
 
 
 
-#ggplot of phylog.all
+#ggplot of phylog.all-------------------------------------------------------------------------------------------------
 coefs_all <- coef(phylog_all)
 x_plot_all <- seq(0, 55, by = 0.1)
 y_plot_all <- plogis(coefs_all[1] + coefs_all[2] * x_plot_all)
@@ -216,7 +179,7 @@ ggplot(plot_data_all) +
                 y = as.numeric(Phenology)
               ))
 
-########### log plotting
+#log plotting-------------------------------------------------------------------------------------------------
 coef_all_log <- coef(phylog_all_log)
 x_plot_all_log <- seq(0, 4, by = 0.1)
 y_plot_all_log <- plogis(coef_all_log[1] + coef_all_log[2] * x_plot_all_log)
@@ -245,7 +208,7 @@ ggplot(plot_data_all_log) +
 
 
 
-################################ABANDON ALL HOPE YE WHO ENTER THIS PART OF THE CODE, TESTING BELOW
+#ABANDON ALL HOPE YE WHO ENTER THIS PART OF THE CODE, TESTING BELOW-------------------------------------------------------------------------------------------------
 
 phylog_all_ape <- compar.gee(as.numeric(Phenology)~SLA, data = all_SLA_LMA_pheno_means, 
                              phy = tree_WSLA_na_WSLA, family = binomial())
