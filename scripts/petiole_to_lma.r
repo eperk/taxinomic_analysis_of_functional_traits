@@ -15,8 +15,7 @@ library(ggplot2)
 ####susy helped me under here, I really need to go through this
 ### to understand how it works
 
-royer_data <- read_csv("~/Documents/BEIN data R/data/royer_data.csv")
-View(royer_data)
+royer_data <- read_csv("~/Documents/BEIN data R/data/raw/royer_data.csv")
 
 royer_data$binomial <- str_replace_all(royer_data$binomial,"\\s+","_")
 
