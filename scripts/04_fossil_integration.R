@@ -1,9 +1,11 @@
+#fossil matrix creation-------------------------------------------------------------------------------------------------
 r_fossilrix <- as.matrix(royer_data_fossil_int)
 r_fossilrix <- r_fossilrix[,1:3]
 
-locate.fossil(royer_tree, r_fossilrix)
+#fossil location N.B. broken-------------------------------------------------------------------------------------------------
+#locate.fossil(royer_tree, r_fossilrix)
 
-#####temptesting
+#temptesting-------------------------------------------------------------------------------------------------
 royer_data_temp <- royer_data_sub[-c(3,5)]
 temp_fossil <- all_fossil[1,]
 temp_full <- rbind(royer_data_temp, temp_fossil)
@@ -24,6 +26,10 @@ add.arrow(tree=temptree,tip="Fagopsis_longifolia",col="red",lwd=3,hedl=0.06,angl
 ###### ask revell for help
 #### get_mrca
 ##### figtree
+###taxize
+#use ppgm functions to conduct my phlyo testing - see notebook
+
+#add species to genus testing-------------------------------------------------------------------------------------------------
 tree_quercus <- add.species.to.genus(tree_plant, "Quercus_sp", where=c("root"))
 tree_royer_q <- add.species.to.genus(royer_tree, "Quercus_sp", where = c("root"))
 tree_fossil <- add.species.to.genus(tree_plant, fossil_mean$Group.1, where=c("root"))

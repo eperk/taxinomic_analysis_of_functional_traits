@@ -197,17 +197,6 @@ ggplot(plot_data_all_log) +
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #ABANDON ALL HOPE YE WHO ENTER THIS PART OF THE CODE, TESTING BELOW-------------------------------------------------------------------------------------------------
 
 phylog_all_ape <- compar.gee(as.numeric(Phenology)~SLA, data = all_SLA_LMA_pheno_means, 

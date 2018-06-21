@@ -1,19 +1,6 @@
-require(BIEN)
-require(tidyr)
-require(dplyr)
-require(stringr)
-require(phangorn)
-require(ape)
-require(phytools)
-require(phylolm)
-require(MPSEM)
-library(picante)
-library(readr)
-library(ggplot2)
+#PEM analysis-------------------------------------------------------------------------
+#susy helped me under here, I really need to go through this to understand how it works
 
-
-####susy helped me under here, I really need to go through this
-### to understand how it works
 
 royer_data <- read_csv("~/Documents/BEIN data R/data/raw/royer_data.csv")
 

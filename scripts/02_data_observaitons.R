@@ -1,4 +1,4 @@
-#read from rds
+#read from rds-------------------------------------------------------------------------
 WSLA <- readRDS("~/Documents/BEIN data R/data/processed/02_WSLAPhen.rds")
 WSLA_fam_count <- readRDS("~/Documents/BEIN data R/data/processed/02_family_count.rds")
 

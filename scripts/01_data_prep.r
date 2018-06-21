@@ -14,6 +14,11 @@ library(ggplot2)
 require(mosaic)
 require(lattice)
 require(nlme)
+install.packages("https://github.com/michellelawing/ppgm")
+library(ppgm)
+library(ape)
+library(geiger)
+library(sp)
 
 
 #create original WSLA dataset-------------------------------------------------------------------------
