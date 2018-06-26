@@ -120,12 +120,23 @@ colnames(royer_data_fossil_int)[colnames(royer_data_fossil_int)=="Group.1"] <- "
 rownames(royer_data_fossil_int)<-royer_data_fossil_int$binomial
 royer_data_fossil_int <- royer_data_fossil_int[-c(1)]
 
+#lookup table creation for intfossil function----------------------------------------------------------------------------------------------
+fossil_comb <- rbind(florissant_fossil_int,renova_fossil_int,bridgecreek_fossil_int)
+fossil_gen <- fossil_comb$Genus
+fossil_gen <- unique(fossil_gen)
+fossil_gen_df <- as.data.frame(fossil_gen)
+fossil_tax <- BIEN_taxonomy_genus(fossil_gen)
+fossil_tax <- fossil_tax[-c(1,7:9)]
+fossil_tax <- unique(fossil_tax)
+
 #final dataframe creation-------------------------------------------------------------------------------------------------
 final_WSLA_DF <- WSLA_fixed_lrgcount[ -c(2,4:13) ]
 colnames(final_WSLA_DF)[colnames(final_WSLA_DF)=="trait_value"] <- "SLA"
 
 #creating of trees-------------------------------------------------------------------------------------------------
 tree_plant <- read.tree('~/Documents/BEIN data R/data/raw/phylodata/Vascular_Plants_rooted.dated.tre')
+#from https://datadryad.org//resource/doi:10.5061/dryad.63q27
+
 tree_tips <- tree_plant$tip.label
 ###### all tips in og tree
 tree_tips_df <- as.data.frame(tree_tips) 
@@ -144,6 +155,9 @@ WSLA_tree_tips <- tree_WSLA_species$tip.label
 WSLA_tree_tips_df <- as.data.frame(WSLA_tree_tips)
 #####plots Zanne tree
 #####drops non WSLA bionomials
+
+tree_massive <-('~/Documents/BEIN data R/data/raw/phylodata/ALLMB.tre')
+#from https://github.com/FePhyFoFum/big_seed_plant_trees/releases
 
 #clean data saving-------------------------------------------------------------------------------------------------
 saveRDS(WSLA_raw, file="~/Documents/BEIN data R/data/processed/00_WSLAraw.rds")

@@ -5,30 +5,7 @@ r_fossilrix <- r_fossilrix[,1:3]
 #fossil location N.B. broken-------------------------------------------------------------------------------------------------
 #locate.fossil(royer_tree, r_fossilrix)
 
-#ppgm funciton edit-------------------------------------------------------------------------------------------------
-
-addfossil<- function(tree,mintime=0,maxtime=NA,name="fossil",edge=NA) {
-  #function depends on ape
-  require(ape)
-  if(is.na(maxtime)){maxtime=max(dist.nodes(tree))/2}
-  tree$node.label<-((length(tree$tip)+1):((length(tree$tip)*2)-1))
-  treeage<-max(dist.nodes(tree))/2
-  M<-dist.nodes(tree)
-  maxedge<-(as.numeric(treeage - M[tree$edge[,1],tree$edge[1,1]]))
-  minedge<-(as.numeric(treeage - M[tree$edge[,2],tree$edge[1,1]]))
-  if(!is.na(edge)){edgesample<-edge}
-  if(is.na(edge)){edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)}
-  dedge<-tree$edge[edgesample,2]
-  place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
-  fossil<-list(edge=matrix(c(2,1),1,2), tip.label=name, edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
-  class(fossil)<-"phylo"
-  tree<-bind.tree(tree,fossil,where=dedge,position=place-minedge[edgesample])
-  tree$node.label<-as.numeric(tree$node.label)+1
-  newnode=which(is.na(tree$node.label))
-  tree$node.label[(newnode+1):length(tree$node.label)]<-as.numeric(tree$node.label[(newnode+1):length(tree$node.label)])+1
-  tree$node.label[newnode]<-as.numeric(tree$node.label[newnode-1])+1
-  return(tree)
-}
+#addfunction function usage-------------------------------------------------------------------------------------------------
 
 fossil_tree <- addfossil(tree_rosidae, mintime = 0, maxtime = NA, name = "rosidae sp.", edge = NA)
 plot(fossil_tree, show.tip.label = FALSE, type = "fan")
