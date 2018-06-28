@@ -156,7 +156,7 @@ WSLA_tree_tips_df <- as.data.frame(WSLA_tree_tips)
 #####plots Zanne tree
 #####drops non WSLA bionomials
 
-tree_massive <-('~/Documents/BEIN data R/data/raw/phylodata/ALLMB.tre')
+tree_massive <-read.tree('~/Documents/BEIN data R/data/raw/phylodata/ALLMB.tre')
 #from https://github.com/FePhyFoFum/big_seed_plant_trees/releases
 
 #clean data saving-------------------------------------------------------------------------------------------------

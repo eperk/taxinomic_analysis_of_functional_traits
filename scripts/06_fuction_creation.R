@@ -67,11 +67,13 @@ addfossil<- function(tree,mintime=0,maxtime=NA,name="fossil",edge=NA) {
   return(tree)
 }
 #intfossil function-----------------------------------------
-intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus="genus"){
+intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus="genus")
+  {
   require(ape)
   lookup <- match(genus, fossil_tax$scrubbed_genus)
   taxonomy <- fossil_tax[na.omit(lookup), ]
-  cladetree <- extract.clade(tree, taxonomy$superorder)
+  cladetree <- extract.clade(tree, taxonomy$order)
+  
   if(is.na(maxtime)){maxtime=max(dist.nodes(cladetree))/2}
   cladetree$node.label<-((length(cladetree$tip)+1):((length(cladetree$tip)*2)-1))
   treeage<-max(dist.nodes(cladetree))/2
@@ -80,7 +82,9 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   minedge<-(as.numeric(treeage - M[cladetree$edge[,2],cladetree$edge[1,1]]))
   if(!is.na(edge)){edgesample<-edge}
   if(is.na(edge)){edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)}
-  # add function here where it attaches the species at the base of the treee if the date isnt available
+  #dropclade-----
+  clade <- cladetree$tip.label
+  cull_tree <- drop.tip(tree_plant, clade, trim.internal = TRUE, collapse.singles = TRUE)
   dedge<-cladetree$edge[edgesample,2]
   place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
   fossil<-list(edge=matrix(c(2,1),1,2), tip.label=name, edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
@@ -90,12 +94,24 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   newnode=which(is.na(tree$node.label))
   cladetree$node.label[(newnode+1):length(tree$node.label)]<-as.numeric(tree$node.label[(newnode+1):length(tree$node.label)])+1
   cladetree$node.label[newnode]<-as.numeric(tree$node.label[newnode-1])+1
-  return(tree)
-}
-rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 35000000, name = "rosdiae sp.", edge = NA, genus = "Rosa")
+  #insertclade busted here to fix, label node that the tree is cut at with an NA, so it should work?-----
+  tree_full <- bind.tree(tree, cull_tree, where = which(tree$node.label == genus))
+  #return(tree_full)
+  return (tree)
   
+}
+#testing below-------
+rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 35000000, name = "Rosa sp.", edge = NA, genus = "Rosa")
 plot(rosidae_insert, show.tip.label = FALSE, type = "fan")
-add.arrow(tree = rosidae_insert, tip = "rosdiae sp.", col="red",lwd=3,hedl=0.06,angle=50)
+add.arrow(tree = rosidae_insert, tip = "Rosa sp.", col="red",lwd=3,hedl=0.06,angle=90)
+
+tree_bind_test <- bind.tree(tree_plant, tree_rosidae, where = which(tree_plant$node.label == "Rosales"))
+
+cull_tree <- drop.tip(tree_plant, rosidae_tips, trim.internal = TRUE, collapse.singles = TRUE)
+
+drop_clade_temp <- rosidea_tips
+
+#tree_temp <- add.species.to.genus(tree_rosidae, "Rosa sp.", genus=NULL, where = c("root"))
 
 ##for loop
 
