@@ -91,6 +91,32 @@ saveRDS(florissant_fossil, file = "~/Documents/BEIN data R/data/processed/04_flo
 saveRDS(renova_fossil, file = "~/Documents/BEIN data R/data/processed/04_renova_fossil_clean.rds")
 saveRDS(bridgecreek_fossil, file = "~/Documents/BEIN data R/data/processed/04_bridgecreek_fossil_clean.rds")
 
+#fossil datasheet for phylogeny integration-----------
+florissant_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_florissant_fossil_clean.rds")
+renova_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_renova_fossil_clean.rds")
+bridgecreek_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_bridgecreek_fossil_clean.rds")
+
+renova_fossil_phylo <- renova_fossil_phylo[-c(7)]
+bridgecreek_fossil_phylo <- bridgecreek_fossil_phylo[-c(7)]
+
+all_fossil_phyloint <- rbind(renova_fossil_phylo, bridgecreek_fossil_phylo, florissant_fossil_phylo)
+
+all_fossil_phyloint$binomial <- paste(all_fossil_phyloint$Genus, all_fossil_phyloint$species)
+all_fossil_phyloint$binomial <- str_replace_all(all_fossil_phyloint$binomial,"\\s+","_")
+
+all_fossil_phyloint$`Approximate Date (Ma)` <- str_replace_all(all_fossil_phyloint$`Approximate Date (Ma)`,"Early Oligocene","33900000")
+all_fossil_phyloint$`Approximate Date (Ma)` <- str_replace_all(all_fossil_phyloint$`Approximate Date (Ma)`,"Late Eocene","37800000")
+all_fossil_phyloint$`Approximate Date (Ma)` <- str_replace_all(all_fossil_phyloint$`Approximate Date (Ma)`,"34.07","34070000")
+
+colnames(all_fossil_phyloint)[colnames(all_fossil_phyloint)=="Approximate Date (Ma)"] <- "date"
+
+saveRDS(all_fossil_phyloint, file = "~/Documents/BEIN data R/data/processed/04_fossil_phylo_integration.rds")
+
+all_fossil_phyloint$date <- as.numeric(all_fossil_phyloint$date)
+#creation of matched dataset where i have species with full taxonomy info------
+all_fossil_phyloint_match<-subset(all_fossil_phyloint, 
+                                  !(all_fossil_phyloint$Genus %in% missing_genus_temp$missing_genus_temp))
+
 #integrate fossil to all data-------------------------------------------------------------------------
 florissant_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_florissant_fossil_clean.rds")
 renova_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_renova_fossil_clean.rds")

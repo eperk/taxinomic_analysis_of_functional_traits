@@ -26,6 +26,10 @@ temptree <- locate.fossil(royer_tree, temp_full, search="exhaustive",plot=TRUE)
 
 add.arrow(tree=temptree,tip="Fagopsis_longifolia",col="red",lwd=3,hedl=0.06,angle=50)
 
+similax_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Smilax sp.", edge = NA, genus = "Smilax")
+plot(similax_insert, type="fan", show.tip.label=FALSE)
+add.arrow(tree = prunus_insert, tip = "Prunus_scottii", col="red",lwd=3,hedl=0.06,angle=90)
+
 
 ######testingcontall_fossil$binomial
 ######located.fossil w/ date constraints and edge constrants?
@@ -46,4 +50,19 @@ tree_fossil <- add.species.to.genus(tree_plant, fossil_mean$Group.1, where=c("ro
 plot(tree_quercus, type = "fan", show.tip.label = FALSE)
 plot(tree_royer_q, type = "fan")
 add.arrow(tree=tree_royer_q,tip="Quercus_sp",col="blue")
+
+#intfossil for loop----------
+#ditch species with no genus match re add later maybe?----
+all_fossil_phyloint_match<-subset(all_fossil_phyloint, 
+                  !(all_fossil_phyloint$Genus %in% missing_genus_temp$missing_genus_temp))
+                              
+intfossil_mass<-
+  foreach(i=1:length(all_fossil_phyloint_match$binomial))%do%
+  {
+    
+    intfossil(tree = tree_plant, mintime = 0, maxtime = all_fossil_phyloint_match$date, name = all_fossil_phyloint_match$binomial,
+              edge = NA, genus = all_fossil_phyloint_match$Genus)
+    
+  }
+
 
