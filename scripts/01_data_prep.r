@@ -16,6 +16,7 @@ require(lattice)
 require(nlme)
 library(geiger)
 library(sp)
+require(foreach)
 
 
 #create original WSLA dataset-------------------------------------------------------------------------
@@ -114,8 +115,9 @@ saveRDS(all_fossil_phyloint, file = "~/Documents/BEIN data R/data/processed/04_f
 
 all_fossil_phyloint$date <- as.numeric(all_fossil_phyloint$date)
 #creation of matched dataset where i have species with full taxonomy info------
+missing_genus <- subset(all_fossil_phyloint, !(all_fossil_phyloint$Genus %in% fossil_tax$scrubbed_genus))
 all_fossil_phyloint_match<-subset(all_fossil_phyloint, 
-                                  !(all_fossil_phyloint$Genus %in% missing_genus_temp$missing_genus_temp))
+  !(all_fossil_phyloint$Genus %in% missing_genus$Genus))
 
 #integrate fossil to all data-------------------------------------------------------------------------
 florissant_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_florissant_fossil_clean.rds")
