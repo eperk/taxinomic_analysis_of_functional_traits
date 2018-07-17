@@ -17,7 +17,7 @@ require(nlme)
 library(geiger)
 library(sp)
 require(foreach)
-
+require(phylobase)
 
 #create original WSLA dataset-------------------------------------------------------------------------
 WSLA <- BIEN_trait_trait("leaf area per leaf dry mass")

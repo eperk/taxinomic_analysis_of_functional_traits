@@ -60,11 +60,7 @@ all_fossil_phyloint_match<-subset(all_fossil_phyloint,
 intfossil_mass<-
   foreach(i=1:length(all_fossil_phyloint_match$binomial))%do%
   {
-    
-    intfossil(tree = tree_plant, mintime = 0, maxtime = all_fossil_phyloint_match$date, 
-              name = all_fossil_phyloint_match$binomial,
-              edge = NA, genus = all_fossil_phyloint_match$Genus)
-    
+    intfossil(tree = tree_plant, mintime = 0,maxtime = all_fossil_phyloint_match$date, name = all_fossil_phyloint_match$binomial, edge = NA,  genus = all_fossil_phyloint_match$Genus)
   }
 
 

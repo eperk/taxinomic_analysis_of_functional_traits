@@ -161,6 +161,7 @@ drop.clade.label <- function(tree, node){
 #https://github.com/MarioJose/r-functions/blob/master/drop.clade.label/extract.clade.label.r
 
 #intfossil function-----------------------------------------
+#created through addfossil function https://github.com/michellelawing/ppgm
 #dependencies: ape, phytools, drop.clade.labels
 intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus="genus")
   {
@@ -169,6 +170,7 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   taxonomy <- fossil_tax[na.omit(lookup), ]
   order <- taxonomy$order
   cladetree <- extract.clade.label(tree, order)
+  cladetree$edge.length<- extract.clade(tree, order)$edge.length
   if(is.na(maxtime)){maxtime=max(dist.nodes(cladetree))/2}
   treeage<-max(dist.nodes(cladetree))/2
   M<-dist.nodes(cladetree)
@@ -178,34 +180,48 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   if(is.na(edge)){edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)}
   #dropclade-----
   clade <- cladetree$tip.label
-  cull_tree <- drop.clade.label(tree_plant, order)
+  cull_tree <- drop.clade.label(tree, order)
+  cull_tree$edge.length <- drop.tip(tree, clade, collapse.singles = FALSE)$edge.length
   #cladetree$node.label<-((length(cladetree$tip)+1):((length(cladetree$tip)*2)-1))
   dedge<-cladetree$edge[edgesample,2]
   place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
   #removed to see if bindtip works better--------------
+  #if(is_not_going_to_work)
+  #then(dont)
   fossil<-list(edge=matrix(c(2,1),1,2), tip.label=name, edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
   class(fossil)<-"phylo"
-  tree<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
+  fossiltree<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
+  
+  edgenum <- as.numeric(nrow(cull_tree$edge))
+  lengthmatrix <- as.matrix(tree$edge.length)
+  missinglength <- as.matrix(lengthmatrix[edgenum,])
+  nedge <- rbind(as.matrix(cull_tree$edge.length), missinglength)
+  cull_tree$edge.length <- nedge
+  
   #cladetree$node.label<-as.numeric(tree$node.label)+1
   #newnode=which(is.na(tree$node.label))
   #cladetree$node.label[(newnode+1):length(tree$node.label)]<-as.numeric(tree$node.label[(newnode+1):length(tree$node.label)])+1
   #cladetree$node.label[newnode]<-as.numeric(tree$node.label[newnode-1])+1-----
-  tree_full <- bind.tree(cull_tree, tree, where = which(cull_tree$tip.label == order))
+  tree_full <- bind.tree(cull_tree, fossiltree, where = which(cull_tree$tip.label == order))
   return(tree_full)
 
 }
 #testing below--------------------------------------------------------------------------------------------------
 rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Rosa sp.", edge = NA, genus = "Rosa")
-plot(rosidae_insert, show.tip.label = FALSE, type = "fan")
+plot(rosidae_insert, show.tip.label = FALSE)
 add.arrow(tree = rosidae_insert, tip = "Rosa sp.", col="red",lwd=3,hedl=0.06,angle=90)
 
-prunus_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Prunus_scottii", edge = NA, genus = "Prunus")
+prunus_insert <- intfossil(rosidae_insert, mintime = 0, maxtime = 33900000, name = "Prunus_scottii", edge = NA, genus = "Prunus")
 plot(prunus_insert, type="fan", show.tip.label=FALSE)
 add.arrow(tree = prunus_insert, tip = "Prunus_scottii", col="red",lwd=3,hedl=0.06,angle=90)
+add.arrow(tree = prunus_insert, tip = "Rosa sp.", col="blue",lwd=3,hedl=0.06,angle=90)
 
-hydrangea_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "hydrangea sp.", edge = NA, genus = "Hydrangea")
+
+hydrangea_insert <- intfossil(prunus_insert, mintime = 0, maxtime = 33900000, name = "hydrangea sp.", edge = NA, genus = "Hydrangea")
 plot(hydrangea_insert, type="fan", show.tip.label=FALSE)
-add.arrow(tree = hydrangea_insert, tip = "hydrangea sp.", col="red",lwd=3,hedl=0.06,angle=90)
+add.arrow(tree = hydrangea_insert, tip = "hydrangea sp.", col="green",lwd=3,hedl=0.06,angle=90)
+add.arrow(tree = hydrangea_insert, tip = "Prunus_scottii", col="red",lwd=3,hedl=0.06,angle=90)
+add.arrow(tree = hydrangea_insert, tip = "Rosa sp.", col="blue",lwd=3,hedl=0.06,angle=90)
 
 #full manual running of function, now identical, use for contiuned function testing---------
 maxtime <- 33900000
@@ -213,7 +229,13 @@ mintime <- 0
 lookup <- match("Rosa", fossil_tax$scrubbed_genus)
 taxonomy <- fossil_tax[na.omit(lookup), ]
 order <- taxonomy$order
+
+#renumbers edges works fine?-------
+cull_tree <- drop.clade.label(tree_plant, order)
 cladetree <- extract.clade.label(tree_plant, order)
+cladetree$edge.length<- extract.clade(tree_plant, order)$edge.length
+cull_temp_edge <- drop.tip(tree_plant, cladetree$tip.label,  collapse.singles = FALSE)
+cull_tree$edge.length <- cull_temp_edge$edge.length
 M<-dist.nodes(cladetree)
 treeage<-max(dist.nodes(cladetree))/2
 maxedge<-(as.numeric(treeage - M[cladetree$edge[,1],cladetree$edge[1,1]]))
@@ -226,10 +248,13 @@ fossil<-list(edge=matrix(c(2,1),1,2), tip.label="rosa sp.", edge.length=runif(1,
 class(fossil)<-"phylo"
 tree_temptest<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
 
-cull_tree <- drop.clade.label(tree_plant, order)
+#CRITICAL ADDS FIXED EDGES------
 
-#cull_tree <- drop.tip(tree_plant, tip = cladetree$tip.label, collapse.singles = TRUE)
+edgenum <- as.numeric(nrow(cull_tree$edge))
+lengthmatrix <- as.matrix(tree_plant$edge.length)
+missinglength <- as.matrix(lengthmatrix[edgenum,])
+nedge <- rbind(as.matrix(cull_tree$edge.length), missinglength)
+cull_tree$edge.length <- nedge
 
 tree_bind_test <- bind.tree(cull_tree, tree_temptest, where = which(cull_tree$tip.label == order))
-plot(tree_bind_test, type="fan", show.tip.label=FALSE)
-add.arrow(tree = hydrangea_insert, tip = "prunus sp.", col="red",lwd=3,hedl=0.06,angle=90)
+plot(tree_bind_test, show.tip.label=FALSE)
