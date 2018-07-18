@@ -179,10 +179,21 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   if(!is.na(edge)){edgesample<-edge}
   if(is.na(edge)){edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)}
   #dropclade-----
-  clade <- cladetree$tip.label
+  #culltree edge fixing still have trouble though---------
   cull_tree <- drop.clade.label(tree, order)
-  cull_tree$edge.length <- drop.tip(tree, clade, collapse.singles = FALSE)$edge.length
-  #cladetree$node.label<-((length(cladetree$tip)+1):((length(cladetree$tip)*2)-1))
+  cull_tree$edge.length <- drop.tip(tree, cladetree$tip.label, collapse.singles = FALSE)$edge.length
+  
+  tree_4 <- as(tree, "phylo4")
+  reqedge <- getEdge(tree_4, order)
+  reqlength <- edgeLength(tree_4)[reqedge]
+  length <- tree$edge.length
+  reqloc <- as.numeric(which(grepl(reqlength, length)))
+  nedge <- as.matrix(cull_tree$edge.length)
+  fixedge <- insertRow(nedge, reqloc, reqlength)
+  
+  cull_tree$edge.length <- fixedge
+  #cant find place where I have too many tips in-----
+  
   dedge<-cladetree$edge[edgesample,2]
   place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
   #removed to see if bindtip works better--------------
@@ -191,17 +202,6 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   fossil<-list(edge=matrix(c(2,1),1,2), tip.label=name, edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
   class(fossil)<-"phylo"
   fossiltree<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
-  
-  edgenum <- as.numeric(nrow(cull_tree$edge))
-  lengthmatrix <- as.matrix(tree$edge.length)
-  missinglength <- as.matrix(lengthmatrix[edgenum,])
-  nedge <- rbind(as.matrix(cull_tree$edge.length), missinglength)
-  cull_tree$edge.length <- nedge
-  
-  #cladetree$node.label<-as.numeric(tree$node.label)+1
-  #newnode=which(is.na(tree$node.label))
-  #cladetree$node.label[(newnode+1):length(tree$node.label)]<-as.numeric(tree$node.label[(newnode+1):length(tree$node.label)])+1
-  #cladetree$node.label[newnode]<-as.numeric(tree$node.label[newnode-1])+1-----
   tree_full <- bind.tree(cull_tree, fossiltree, where = which(cull_tree$tip.label == order))
   return(tree_full)
 
@@ -230,31 +230,35 @@ lookup <- match("Rosa", fossil_tax$scrubbed_genus)
 taxonomy <- fossil_tax[na.omit(lookup), ]
 order <- taxonomy$order
 
-#renumbers edges works fine?-------
-cull_tree <- drop.clade.label(tree_plant, order)
-cladetree <- extract.clade.label(tree_plant, order)
-cladetree$edge.length<- extract.clade(tree_plant, order)$edge.length
-cull_temp_edge <- drop.tip(tree_plant, cladetree$tip.label,  collapse.singles = FALSE)
-cull_tree$edge.length <- cull_temp_edge$edge.length
-M<-dist.nodes(cladetree)
-treeage<-max(dist.nodes(cladetree))/2
-maxedge<-(as.numeric(treeage - M[cladetree$edge[,1],cladetree$edge[1,1]]))
-minedge<-(as.numeric(treeage - M[cladetree$edge[,2],cladetree$edge[1,1]]))
+#CRITICAL ADDS FIXED EDGES------
+cladetree_temp <- extract.clade.label(tree_plant, order)
+cladetree_temp$edge.length<- extract.clade(tree_plant, order)$edge.length
+
+cull_tree_temp <- drop.clade.label(tree_plant, order)
+cull_tree_temp$edge.length <- drop.tip(tree_plant, cladetree_temp$tip.label, collapse.singles = FALSE)$edge.length
+
+tree_4 <- as(tree_plant, "phylo4")
+reqedge <- getEdge(tree_4, order)
+reqlength <- edgeLength(tree_4)[reqedge]
+length <- tree_plant$edge.length
+reqloc <- as.numeric(which(grepl(reqlength, length)))
+nedge <- as.matrix(cull_tree_temp$edge.length)
+fixedge <- insertRow(nedge, reqloc, reqlength)
+
+cull_tree_temp$edge.length <- fixedge
+
+M<-dist.nodes(cladetree_temp)
+treeage<-max(dist.nodes(cladetree_temp))/2
+maxedge<-(as.numeric(treeage - M[cladetree_temp$edge[,1],cladetree_temp$edge[1,1]]))
+minedge<-(as.numeric(treeage - M[cladetree_temp$edge[,2],cladetree_temp$edge[1,1]]))
 edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)
 #dropclade-----
-dedge<-cladetree$edge[edgesample,2]
+dedge<-cladetree_temp$edge[edgesample,2]
 place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
 fossil<-list(edge=matrix(c(2,1),1,2), tip.label="rosa sp.", edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
 class(fossil)<-"phylo"
 tree_temptest<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
 
-#CRITICAL ADDS FIXED EDGES------
-
-edgenum <- as.numeric(nrow(cull_tree$edge))
-lengthmatrix <- as.matrix(tree_plant$edge.length)
-missinglength <- as.matrix(lengthmatrix[edgenum,])
-nedge <- rbind(as.matrix(cull_tree$edge.length), missinglength)
-cull_tree$edge.length <- nedge
-
 tree_bind_test <- bind.tree(cull_tree, tree_temptest, where = which(cull_tree$tip.label == order))
 plot(tree_bind_test, show.tip.label=FALSE)
+
