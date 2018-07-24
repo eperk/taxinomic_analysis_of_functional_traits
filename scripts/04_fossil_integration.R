@@ -51,16 +51,36 @@ plot(tree_quercus, type = "fan", show.tip.label = FALSE)
 plot(tree_royer_q, type = "fan")
 add.arrow(tree=tree_royer_q,tip="Quercus_sp",col="blue")
 
-#intfossil for loop----------
-#ditch species with no genus match re add later maybe?----
+#creation of dataframe to be run through for loop----------
 all_fossil_phyloint<- readRDS("~/Documents/BEIN data R/data/processed/04_fossil_phylo_integration.rds")
 all_fossil_phyloint_match<-subset(all_fossil_phyloint, 
-                  !(all_fossil_phyloint$Genus %in% missing_genus$missing_genus))
+                  !(all_fossil_phyloint$Genus %in% missing_genus$Genus))
+all_fossil_phyloint_match$date <- as.numeric(all_fossil_phyloint_match$date)
                               
+
+#####current for loop, still has issues----------------
 intfossil_mass<-
-  foreach(i=1:length(all_fossil_phyloint_match$binomial))%do%
+  for(i in 1:nrow(all_fossil_phyloint_match))
   {
-    intfossil(tree = tree_plant, mintime = 0,maxtime = all_fossil_phyloint_match$date, name = all_fossil_phyloint_match$binomial, edge = NA,  genus = all_fossil_phyloint_match$Genus)
+    intfossil(
+      tree = tree_plant, 
+      mintime = 0,
+      maxtime = 37800000, 
+      name = all_fossil_phyloint_match$binomial[i], 
+      edge = NA,  
+      genus = all_fossil_phyloint_match$Genus[i])
   }
+
+
+
+
+
+intfossil(
+  tree = tree_plant, 
+  mintime = 0,
+  maxtime = 37800000, 
+  name = all_fossil_phyloint_match$binomial[1], 
+  edge = NA,  
+  genus = all_fossil_phyloint_match$Genus[1])
 
 

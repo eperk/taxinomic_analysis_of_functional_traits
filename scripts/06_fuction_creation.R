@@ -176,10 +176,7 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   M<-dist.nodes(cladetree)
   maxedge<-(as.numeric(treeage - M[cladetree$edge[,1],cladetree$edge[1,1]]))
   minedge<-(as.numeric(treeage - M[cladetree$edge[,2],cladetree$edge[1,1]]))
-  if(!is.na(edge)){edgesample<-edge}
   if(is.na(edge)){edgesample<-sample(which(maxedge>mintime & minedge<maxtime),1)}
-  #dropclade-----
-  #culltree edge fixing still have trouble though---------
   cull_tree <- drop.clade.label(tree, order)
   cull_tree$edge.length <- drop.tip(tree, cladetree$tip.label, collapse.singles = FALSE)$edge.length
   
@@ -192,17 +189,16 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
   fixedge <- insertRow(nedge, reqloc, reqlength)
   
   cull_tree$edge.length <- fixedge
-  #cant find place where I have too many tips in-----
-  
+
   dedge<-cladetree$edge[edgesample,2]
   place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
-  #removed to see if bindtip works better--------------
   #if(is_not_going_to_work)
   #then(dont)
   fossil<-list(edge=matrix(c(2,1),1,2), tip.label=name, edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
   class(fossil)<-"phylo"
   fossiltree<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
   tree_full <- bind.tree(cull_tree, fossiltree, where = which(cull_tree$tip.label == order))
+  tree_full <- force.ultrametric(tree_full, method = "extend")
   return(tree_full)
 
 }
@@ -210,6 +206,9 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
 rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Rosa sp.", edge = NA, genus = "Rosa")
 plot(rosidae_insert, show.tip.label = FALSE)
 add.arrow(tree = rosidae_insert, tip = "Rosa sp.", col="red",lwd=3,hedl=0.06,angle=90)
+
+rosidae_insert_4 <- as(rosidae_insert, "phylo4")
+edgeLength(rosidae_insert_4, "Rosa sp.")
 
 prunus_insert <- intfossil(rosidae_insert, mintime = 0, maxtime = 33900000, name = "Prunus_scottii", edge = NA, genus = "Prunus")
 plot(prunus_insert, type="fan", show.tip.label=FALSE)
@@ -233,6 +232,7 @@ order <- taxonomy$order
 #CRITICAL ADDS FIXED EDGES------
 cladetree_temp <- extract.clade.label(tree_plant, order)
 cladetree_temp$edge.length<- extract.clade(tree_plant, order)$edge.length
+ultra_cladetree_temp <- force.ultrametric(cladetree_temp, method = "extend")
 
 cull_tree_temp <- drop.clade.label(tree_plant, order)
 cull_tree_temp$edge.length <- drop.tip(tree_plant, cladetree_temp$tip.label, collapse.singles = FALSE)$edge.length
@@ -246,6 +246,7 @@ nedge <- as.matrix(cull_tree_temp$edge.length)
 fixedge <- insertRow(nedge, reqloc, reqlength)
 
 cull_tree_temp$edge.length <- fixedge
+ultra_cull_temp <- force.ultrametric(cull_tree_temp, method = "extend")
 
 M<-dist.nodes(cladetree_temp)
 treeage<-max(dist.nodes(cladetree_temp))/2
@@ -257,8 +258,10 @@ dedge<-cladetree_temp$edge[edgesample,2]
 place<-runif(1,max(c(minedge[edgesample],mintime)),min(c(maxtime,maxedge[edgesample])))
 fossil<-list(edge=matrix(c(2,1),1,2), tip.label="rosa sp.", edge.length=runif(1,min=0.0000000001,max=(place-max(c(minedge[edgesample],mintime)))), Nnode=1)
 class(fossil)<-"phylo"
-tree_temptest<-bind.tree(cladetree,fossil,where=dedge,position=place-minedge[edgesample])
+tree_temptest<-bind.tree(cladetree_temp,fossil,where=dedge,position=place-minedge[edgesample])
+ultra_temptest <- force.ultrametric(tree_temptest, method = "extend")
 
-tree_bind_test <- bind.tree(cull_tree, tree_temptest, where = which(cull_tree$tip.label == order))
-plot(tree_bind_test, show.tip.label=FALSE)
+tree_bind_test <- bind.tree(ultra_cull_temp, ultra_temptest, where = which(cull_tree$tip.label == order))
+ultra_bind_test <- force.ultrametric(tree_bind_test, method = "extend")
+plot(ultra_bind_test, show.tip.label=FALSE)
 
