@@ -56,31 +56,45 @@ all_fossil_phyloint<- readRDS("~/Documents/BEIN data R/data/processed/04_fossil_
 all_fossil_phyloint_match<-subset(all_fossil_phyloint, 
                   !(all_fossil_phyloint$Genus %in% missing_genus$Genus))
 all_fossil_phyloint_match$date <- as.numeric(all_fossil_phyloint_match$date)
+
+all_fossil_phyloint_match <-
                               
 
-#####current for loop, still has issues----------------
-intfossil_mass<-
+#####current for loop, still has issues---------------
+
+
   for(i in 1:nrow(all_fossil_phyloint_match))
   {
     intfossil(
       tree = tree_plant, 
       mintime = 0,
-      maxtime = 37800000, 
+      maxtime = as.numeric(all_fossil_phyloint_match$date[i]), 
       name = all_fossil_phyloint_match$binomial[i], 
       edge = NA,  
       genus = all_fossil_phyloint_match$Genus[i])
   }
 
+ foreach(i:nrow(all_fossil_phyloint_match)) %do%
+ {
+   intfossil(
+     tree = tree_plant, 
+     mintime = 0,
+     maxtime = as.numeric(all_fossil_phyloint_match$date[i]), 
+     name = all_fossil_phyloint_match$binomial[i], 
+     edge = NA,  
+     genus = all_fossil_phyloint_match$Genus[i]
+     
+   )
+ }
+   
 
 
-
-
-intfossil(
+intfossil_test <- intfossil(
   tree = tree_plant, 
   mintime = 0,
-  maxtime = 37800000, 
-  name = all_fossil_phyloint_match$binomial[1], 
+  maxtime = 33900000, 
+  name = "Koelreuteria_sp.", 
   edge = NA,  
-  genus = all_fossil_phyloint_match$Genus[1])
+  genus = "Koelreuteria")
 
 

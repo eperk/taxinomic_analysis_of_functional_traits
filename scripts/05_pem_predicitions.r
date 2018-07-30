@@ -1,6 +1,5 @@
 #PEM analysis-------------------------------------------------------------------------
-#susy helped me under here, I really need to go through this to understand how it works
-
+#creation of all components required for PEM analysis-----------
 
 royer_data <- read_csv("~/Documents/BEIN data R/data/raw/royer_data.csv")
 
@@ -52,17 +51,19 @@ plot(royer_phy,show.node.label=TRUE)
 edgelabels(1L:nrow(royer_phy$edge),
            edge=1L:nrow(royer_phy$edge),bg="white",cex=0.75)
 
+
+
+
+
+#creation of PEM-------
+#NB. manual testing using the first integrated fossil tree
+
+
+
+royer_pgraph <- Phylo2DirectedGraph(intfossil_test)
+
 steepness <- rep(0,attr(royer_pgraph,"ev")[1L])
 evol_rate <- rep(1,attr(royer_pgraph,"ev")[1L])
-
-
-
-####################################
-
-
-
-
-royer_pgraph <- Phylo2DirectedGraph(royer_phylo_rmv)
 
 royer_PEM <- PEM.build(royer_pgraph,
                        d="distance", sp="species",
@@ -97,14 +98,19 @@ pred_royer <- predict.PEM(
                 "prediction",0.95) %>% 
                 as.data.frame()
 
-####pred_royer$true_values <- 10^pred_royer$values
-
-royer.yeti.test <- royer.test[-1,]
-locate.yeti(royer_phylo_rmv, as.matrix(royer.yeti.test))
 
 
 
-###########maybe with binary variable?????
+#testing area for first phylo with fossil integration----
+#NB. intfossil_test tree is too big and creates integer overflow---------------
+test_pgraph <- Phylo2DirectedGraph(intfossil_test)
+
+steepness <- rep(0,attr(test_pgraph,"ev")[1L])
+evol_rate <- rep(1,attr(test_pgraph,"ev")[1L])
+
+test_PEM <- PEM.build(test_pgraph,
+                       d="distance", sp="species",
+                       a=steepness,psi=evol_rate)
 
 #####always make a regular lm of the log(LMA) and log((PW^2)/LA)
 

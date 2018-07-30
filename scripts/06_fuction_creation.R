@@ -204,7 +204,7 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
 }
 #testing below--------------------------------------------------------------------------------------------------
 rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Rosa sp.", edge = NA, genus = "Rosa")
-plot(rosidae_insert, show.tip.label = FALSE)
+plot(rosidae_insert)
 add.arrow(tree = rosidae_insert, tip = "Rosa sp.", col="red",lwd=3,hedl=0.06,angle=90)
 
 rosidae_insert_4 <- as(rosidae_insert, "phylo4")
