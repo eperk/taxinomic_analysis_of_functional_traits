@@ -20,6 +20,7 @@ require(foreach)
 require(phylobase)
 require(tibble)
 require(miscTools)
+require(lme4)
 
 #create original WSLA dataset-------------------------------------------------------------------------
 WSLA <- BIEN_trait_trait("leaf area per leaf dry mass")
@@ -189,10 +190,110 @@ WSLA_tree_tips_df <- as.data.frame(WSLA_tree_tips)
 tree_massive <-read.tree('~/Documents/BEIN data R/data/raw/phylodata/ALLMB.tre')
 #from https://github.com/FePhyFoFum/big_seed_plant_trees/releases
 
+
+
+#cleaning data for inital PEM---------------
+royer_data <- read_csv("~/Documents/BEIN data R/data/raw/royer_data.csv")
+
+royer_data$binomial <- str_replace_all(royer_data$binomial,"\\s+","_")
+
+royer_data_sub<-
+  royer_data %>% 
+  dplyr::filter(binomial%in%tree_plant$tip.label) %>% 
+  group_by(binomial) %>% 
+  summarise(avg_petiole_width=mean(petiole_width, na.rm=TRUE),
+            avg_LMA=mean(LMA, na.rm=TRUE), avg_LA=mean(leaf_area)) %>% 
+  as.data.frame()
+
+
+
+royer_data_sub$log_lma <- log(royer_data_sub$avg_LMA)
+royer_data_sub$log_pet_leafarea <- log(royer_data_sub$avg_petiole_width^2/royer_data_sub$avg_LA)
+
+rownames(royer_data_sub)<-royer_data_sub$binomial
+
+indx<-which(tree_plant$tip.label%in%royer_data_sub$binomial==FALSE)
+
+royer_tree <- drop.tip(tree_plant, tree_plant$tip.label[indx])
+royer_tips <- royer_tree$tip.label
+
+
+spmatch <- match(royer_tree$tip.label,
+                 royer_data_sub[,1L])
+royer_match_data <- royer_data_sub[spmatch,]
+
+
+royer_phylo_lma<-match.phylo.data(royer_tree,royer_data_sub)
+royer_phylo_lma$data$avg_petiole_width<-as.numeric(royer_phylo_lma$data$avg_petiole_width)
+royer_phylo_lma$data$avg_LMA<-as.numeric(royer_phylo_lma$data$avg_LMA)
+royer_phylo_lma$data$log_lma<-as.numeric(royer_phylo_lma$data$log_lma)
+royer_phylo_lma$data$log_pet_leafarea<-as.numeric(royer_phylo_lma$data$log_pet_leafarea)
+
+#royer data cleaning for LME4------------
+royer_data_LME4<-
+  royer_data %>% 
+  group_by(binomial) %>% 
+  summarise(avg_petiole_width=mean(petiole_width, na.rm=TRUE),
+            avg_LMA=mean(LMA, na.rm=TRUE), avg_LA=mean(leaf_area)) %>% 
+  as.data.frame()
+
+royer_data_LME4$log_lma <- log(royer_data_LME4$avg_LMA)
+royer_data_LME4$log_pet_leafarea <- log(royer_data_LME4$avg_petiole_width^2/royer_data_LME4$avg_LA)
+
+royer_data_LME4$binomial <- as.character(gsub("\\?", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\#", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_1", "1", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_2", "2", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_3", "3", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_4", "4", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_5", "5", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_cf.", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_\\(trilobum)", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\-herculis", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_\\(nitidissima)", "", royer_data_LME4$binomial))
+royer_data_LME4$binomial <- as.character(gsub("\\_var_remyi", "", royer_data_LME4$binomial))
+
+
+royer_data_LME4<-
+  royer_data_LME4 %>% 
+  filter(!grepl('unknown', binomial))
+
+royer_data_LME4<-
+  royer_data_LME4 %>% 
+  filter(!grepl('unkown', binomial))
+
+royer_data_LME4<-
+  royer_data_LME4 %>% 
+  filter(!grepl('cf._Lasiopetalum', binomial))
+
+
+royer_data_LME4_split <-
+  royer_data_LME4 %>% separate(binomial, 
+                c("genus", "species"))
+
+colnames(royer_data_LME4_split)[colnames(royer_data_LME4_split)=="genus"] <- "scrubbed_genus"
+
+royer_tax_data <- BIEN_taxonomy_genus(royer_data_LME4_split$genus)
+royer_tax_data_sub <- subset(royer_tax_data, royer_data_LME4_split$genus %in% royer_tax_data$scrubbed_genus)
+royer_tax_data_sub <- royer_tax_data_sub [-c(1,7,8:9)]
+royer_tax_data_sub <- unique(royer_tax_data_sub)
+royer_tax_data_sub <- na.omit(royer_tax_data_sub)
+royer_tax_full <- left_join(royer_data_LME4_split, royer_tax_data_sub, by= "scrubbed_genus")
+
+#creation of fossil newdata for preidciton-------
+ all_fossil_LMEpred <- all_fossil %>%
+  separate(binomial, 
+    c("scrubbed_genus", "species"))
+all_fossil_royer_pred <- left_join(all_fossil_LMEpred, fossil_tax, by = "scrubbed_genus")
+
+all_fossil_royer_pred <- na.omit(all_fossil_royer_pred)
+
 #clean data saving-------------------------------------------------------------------------------------------------
 saveRDS(WSLA_raw, file="~/Documents/BEIN data R/data/processed/00_WSLAraw.rds")
 saveRDS(WSLA, file="~/Documents/BEIN data R/data/processed/02_WSLAPhen.rds")
 saveRDS(WSLA_fixed_lrgcount, file="~/Documents/BEIN data R/data/processed/02_family_count.rds")
 saveRDS(final_WSLA_DF, file = "~/Documents/BEIN data R/data/processed/03_finalWSLADF.rds")
-saveRDS(royer_data_fossil_int, file="~/Documents/BEIN data R/data/processed/04_royer_data_fossil_int")
+saveRDS(royer_data_fossil_int, file="~/Documents/BEIN data R/data/processed/04_royer_data_fossil_int.rds")
 write.tree(tree_WSLA_species, file = "~/Documents/BEIN data R/data/processed/03_WSLA_species.tre")
+saveRDS(royer_phylo_lma, "~/Documents/BEIN data R/data/processed/05_royer_clean_df_phylo.rds")
+saveRDS(royer_tax_full, "~/Documents/BEIN data R/data/processed/07_lm4_royer")

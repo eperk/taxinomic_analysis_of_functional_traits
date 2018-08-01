@@ -1,40 +1,6 @@
 #PEM analysis-------------------------------------------------------------------------
 #creation of all components required for PEM analysis-----------
 
-royer_data <- read_csv("~/Documents/BEIN data R/data/raw/royer_data.csv")
-
-royer_data$binomial <- str_replace_all(royer_data$binomial,"\\s+","_")
-
-royer_data_sub<-
-  royer_data %>% 
-  dplyr::filter(binomial%in%tree_plant$tip.label) %>% 
-  group_by(binomial) %>% 
-  summarise(avg_petiole_width=mean(petiole_width, na.rm=TRUE),
-            avg_LMA=mean(LMA, na.rm=TRUE), avg_LA=mean(leaf_area)) %>% 
-            as.data.frame()
-
-royer_data_sub$log_lma <- log(royer_data_sub$avg_LMA)
-royer_data_sub$log_pet_leafarea <- log(royer_data_sub$avg_petiole_width^2/royer_data_sub$avg_LA)
-
-rownames(royer_data_sub)<-royer_data_sub$binomial
-
-indx<-which(tree_plant$tip.label%in%royer_data_sub$binomial==FALSE)
-
-royer_tree <- drop.tip(tree_plant, tree_plant$tip.label[indx])
-royer_tips <- royer_tree$tip.label
-
-
-spmatch <- match(royer_tree$tip.label,
-                 royer_data_sub[,1L])
-royer_match_data <- royer_data_sub[spmatch,]
-
-
-royer_phylo_lma<-match.phylo.data(royer_tree,royer_data_sub)
-royer_phylo_lma$data$avg_petiole_width<-as.numeric(royer_phylo_lma$data$avg_petiole_width)
-royer_phylo_lma$data$avg_LMA<-as.numeric(royer_phylo_lma$data$avg_LMA)
-royer_phylo_lma$data$log_lma<-as.numeric(royer_phylo_lma$data$log_lma)
-royer_phylo_lma$data$log_pet_leafarea<-as.numeric(royer_phylo_lma$data$log_pet_leafarea)
-write_rds(royer_phylo_lma, "./outputs/Royer_clean_df_phylo.rds")
 
 royer_train <- royer_match_data[-(1:2),,drop=FALSE]
 royer_phylo_rmv <- drop.tip(royer_phylo_lma$phy, c("Piper_reticulatum","Piper_arboreum"))

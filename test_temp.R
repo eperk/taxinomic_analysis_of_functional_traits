@@ -79,3 +79,10 @@ nodelabels(collapse.singles(tr_full_temp)$node.label, cex=0.8, adj = 0.5)
 
 
 ###these functions, when used in conjunction work perfectly!! lit
+
+
+
+
+
+#nlme testing-----
+
