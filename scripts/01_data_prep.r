@@ -74,13 +74,15 @@ WSLA_fixed_lrgcount <- subset(WSLA_fixed, as.numeric(count)>1)
 ##### makes a datatable with only species with a count over 1
 
 #creation of clean datasets for use in fossil tree integraiton-------------------------------------------------------------------------
-florissant_fossil <- read_csv("~/Documents/BEIN data R/data/raw/florissant_fossil.csv")
-renova_fossil <- read_csv("~/Documents/BEIN data R/data/raw/renova_fossil.csv")
-bridgecreek_fossil <- read_csv("~/Documents/BEIN data R/data/raw/renova_fossil.csv")
+florissant_fossil <- read_csv("~/Documents/BEIN data R/data/raw/FlorissantData_LMA_inc.csv")
+renova_fossil <- read_csv("~/Documents/BEIN data R/data/raw/RenovaData_LMA_inc.csv")
+bridgecreek_fossil <- read_csv("~/Documents/BEIN data R/data/raw/BridgeCreekData_LMA_inc.csv")
 
-florissant_fossil <- florissant_fossil[-c(1,7)]
-renova_fossil <- renova_fossil[-c(1,7,10:12)]
-bridgecreek_fossil <- bridgecreek_fossil[-c(1,7,10:12)]
+florissant_fossil <- florissant_fossil[-c(1,9:11)]
+renova_fossil <- renova_fossil[-c(1,9:12)]
+bridgecreek_fossil <- bridgecreek_fossil[-c(1,8,10:12)]
+
+
 
 florissant_fossil$species [is.na(florissant_fossil$species)] <- "sp."
 florissant_fossil <- na.omit(florissant_fossil)
@@ -99,9 +101,6 @@ saveRDS(bridgecreek_fossil, file = "~/Documents/BEIN data R/data/processed/04_br
 florissant_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_florissant_fossil_clean.rds")
 renova_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_renova_fossil_clean.rds")
 bridgecreek_fossil_phylo <- readRDS("~/Documents/BEIN data R/data/processed/04_bridgecreek_fossil_clean.rds")
-
-renova_fossil_phylo <- renova_fossil_phylo[-c(7)]
-bridgecreek_fossil_phylo <- bridgecreek_fossil_phylo[-c(7)]
 
 all_fossil_phyloint <- rbind(renova_fossil_phylo, bridgecreek_fossil_phylo, florissant_fossil_phylo)
 
@@ -127,23 +126,22 @@ florissant_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_flor
 renova_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_renova_fossil_clean.rds")
 bridgecreek_fossil_int <- readRDS("~/Documents/BEIN data R/data/processed/04_bridgecreek_fossil_clean.rds")
 
-renova_fossil_int <- renova_fossil_int[-c(6,7)]
-bridgecreek_fossil_int <- bridgecreek_fossil_int[-c(6,7)]
-florissant_fossil_int <- florissant_fossil_int[-c(6)]
-
 all_fossil <- rbind(florissant_fossil_int, renova_fossil_int, bridgecreek_fossil_int)
 all_fossil$binomial <- paste(all_fossil$Genus, all_fossil$species)
 all_fossil$binomial <- str_replace_all(all_fossil$binomial,"\\s+","_")
-all_fossil <- all_fossil[,c(6,1:5)]
-all_fossil <- all_fossil[-c(2,3)]
+all_fossil <- all_fossil[-c(1,2)]
 
 royer_data_fossil_int <- royer_data_sub[-c(3,5)]
 
 colnames(all_fossil)[colnames(all_fossil)=="Petiole Width (cm)"] <- "avg_petiole_width"
 colnames(all_fossil)[colnames(all_fossil)=="Leaf Area (cm^2)"] <- "avg_LA"
 colnames(all_fossil)[colnames(all_fossil)=="PW^2/A"] <- "log_pet_leafarea"
-all_fossil$log_pet_leafarea <- log(all_fossil$log_pet_leafarea)
+colnames(all_fossil)[colnames(all_fossil)=="LMA (g/m^2)"] <- "log_LMA"
 
+all_fossil$log_pet_leafarea <- log(all_fossil$log_pet_leafarea)
+all_fossil$log_LMA <- log(all_fossil$log_LMA)
+
+#broken from here down nb fix later---------
 royer_data_fossil_int <- rbind(all_fossil,royer_data_fossil_int)
 
 royer_data_fossil_int <- aggregate(royer_data_fossil_int[,-1], by=list(royer_data_fossil_int$binomial), mean)
@@ -287,6 +285,7 @@ royer_tax_full <- left_join(royer_data_LME4_split, royer_tax_data_sub, by= "scru
 all_fossil_royer_pred <- left_join(all_fossil_LMEpred, fossil_tax, by = "scrubbed_genus")
 
 all_fossil_royer_pred <- na.omit(all_fossil_royer_pred)
+all_fossil_royer_pred <- unique(all_fossil_royer_pred)
 
 #clean data saving-------------------------------------------------------------------------------------------------
 saveRDS(WSLA_raw, file="~/Documents/BEIN data R/data/processed/00_WSLAraw.rds")
