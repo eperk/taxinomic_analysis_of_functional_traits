@@ -21,6 +21,8 @@ require(phylobase)
 require(tibble)
 require(miscTools)
 require(lme4)
+require(RColorBrewer)
+
 
 #create original WSLA dataset-------------------------------------------------------------------------
 WSLA <- BIEN_trait_trait("leaf area per leaf dry mass")
@@ -228,6 +230,7 @@ royer_phylo_lma$data$log_lma<-as.numeric(royer_phylo_lma$data$log_lma)
 royer_phylo_lma$data$log_pet_leafarea<-as.numeric(royer_phylo_lma$data$log_pet_leafarea)
 
 #royer data cleaning for LME4------------
+#come back to this fix this damn data-------
 royer_data_LME4<-
   royer_data %>% 
   group_by(binomial) %>% 

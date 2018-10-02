@@ -26,7 +26,7 @@ edgelabels(1L:nrow(royer_phy$edge),
 
 
 
-royer_pgraph <- Phylo2DirectedGraph(intfossil_test)
+royer_pgraph <- Phylo2DirectedGraph(royer_phy)
 
 steepness <- rep(0,attr(royer_pgraph,"ev")[1L])
 evol_rate <- rep(1,attr(royer_pgraph,"ev")[1L])
