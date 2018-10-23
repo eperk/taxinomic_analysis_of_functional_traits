@@ -57,8 +57,7 @@ all_fossil_phyloint_match<-subset(all_fossil_phyloint,
                   !(all_fossil_phyloint$Genus %in% missing_genus$Genus))
 all_fossil_phyloint_match$date <- as.numeric(all_fossil_phyloint_match$date)
 
-all_fossil_phyloint_match <-
-                              
+
 
 #####current for loop, still has issues---------------
 
@@ -71,8 +70,11 @@ all_fossil_phyloint_match <-
       maxtime = as.numeric(all_fossil_phyloint_match$date[i]), 
       name = all_fossil_phyloint_match$binomial[i], 
       edge = NA,  
-      genus = all_fossil_phyloint_match$Genus[i])
+      genus = all_fossil_phyloint_match$Genus[i],
+      fossil_tax = fossil_tax)
   }
+
+
 
  foreach(i:nrow(all_fossil_phyloint_match)) %do%
  {

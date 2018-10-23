@@ -271,6 +271,7 @@ predict.glm(SLA.LMA.glm.predict.families)
 ########is phylogenetic model more informative? look at literature
 ############ use coefficents to try and predict the the phyloglm model???????
 
+#more ideas-------
 
 
 

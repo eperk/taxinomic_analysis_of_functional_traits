@@ -21,6 +21,11 @@ fam.phen.SLA <- WSLA_fam_count %>%
 fam.phen.SLA <- na.omit(fam.phen.SLA)
 fam.phen.LMA <- na.omit(fam.phen.LMA)
 
+#statistical estimates
+favstats(~as.numeric(meanLMA) | Phenology , data=fam.phen.LMA)
+TukeyHSD(as.numeric(meanLMA)~Phenology, data=fam.phen.LMA)
+
+
 
 #ggplots of phenology and lma by family: shows trends-------------------------------------------------------------------------
   ggplot(fam.phen.LMA,
@@ -30,7 +35,8 @@ fam.phen.LMA <- na.omit(fam.phen.LMA)
              group=scrubbed_family)) +
   geom_point() +
     geom_line()+
-   theme(legend.position="none")
+   theme(legend.position="none")+
+  labs(y= "Mean Leaf Mass Area (LMA)")
 
   ggplot(fam.phen.SLA,
          aes(x= Phenology, 

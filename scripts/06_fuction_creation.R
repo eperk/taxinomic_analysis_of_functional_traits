@@ -163,7 +163,7 @@ drop.clade.label <- function(tree, node){
 #intfossil function-----------------------------------------
 #created through addfossil function https://github.com/michellelawing/ppgm
 #dependencies: ape, phytools, drop.clade.labels
-intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus="genus")
+intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus="genus", fossil_tax)
   {
   require(ape)
   lookup <- match(genus, fossil_tax$scrubbed_genus)
@@ -204,14 +204,14 @@ intfossil <- function(tree, mintime=0,maxtime=NA, name="fossil", edge=NA, genus=
 }
 #testing below--------------------------------------------------------------------------------------------------
 rosidae_insert <- intfossil(tree_plant, mintime = 0, maxtime = 33900000, name = "Rosa sp.", edge = NA, genus = "Rosa")
-plot(rosidae_insert)
+plot(rosidae_insert, type="fan", show.tip.label=FALSE)
 add.arrow(tree = rosidae_insert, tip = "Rosa sp.", col="red",lwd=3,hedl=0.06,angle=90)
 
 rosidae_insert_4 <- as(rosidae_insert, "phylo4")
 edgeLength(rosidae_insert_4, "Rosa sp.")
 
 prunus_insert <- intfossil(rosidae_insert, mintime = 0, maxtime = 33900000, name = "Prunus_scottii", edge = NA, genus = "Prunus")
-plot(prunus_insert, type="fan", show.tip.label=FALSE)
+plot(prunus_insert,type="fan", show.tip.label=FALSE)
 add.arrow(tree = prunus_insert, tip = "Prunus_scottii", col="red",lwd=3,hedl=0.06,angle=90)
 add.arrow(tree = prunus_insert, tip = "Rosa sp.", col="blue",lwd=3,hedl=0.06,angle=90)
 
