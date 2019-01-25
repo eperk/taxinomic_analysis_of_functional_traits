@@ -117,7 +117,7 @@ SLA_LMA_pheno_means <- left_join(SLA_LMA_pheno_means, Zanne, by= "binomial")
 SLA_LMA_pheno_means <- SLA_LMA_pheno_means [-c(4)]
 colnames(SLA_LMA_pheno_means)[colnames(SLA_LMA_pheno_means)=="Phenology.y"] <- "Phenology"
 SLA_LMA_pheno_means <- na.omit(SLA_LMA_pheno_means)
-all_SLA_LMA_pheno_means <- subset(SLA_LMA_pheno_means, SLA_LMA_pheno_means$binomial %in% WSLA.tree.tips)
+all_SLA_LMA_pheno_means <- subset(SLA_LMA_pheno_means, SLA_LMA_pheno_means$binomial %in% WSLA_tree_tips)
 all_SLA_LMA_pheno_means_labels <- all_SLA_LMA_pheno_means[,1]
 all_SLA_LMA_pheno_means_labels <- as.data.frame(all_SLA_LMA_pheno_means_labels)
 rownames(all_SLA_LMA_pheno_means) <- all_SLA_LMA_pheno_means_labels[,1]
@@ -138,6 +138,7 @@ all_SLA_LMA_pheno_means <- all_SLA_LMA_pheno_means[ order(match(all_SLA_LMA_phen
                                                 tree_WSLA_na_WSLA_tips$tree_WSLA_na_WSLA_tips)), ]
 
 #Decidous=1 Evergreen=0 creation of binary factor-------------------------------------------------------------------------------------------------
+all_SLA_LMA_pheno_means$Phenology <- as.character(all_SLA_LMA_pheno_means$Phenology)
 all_SLA_LMA_pheno_means$Phenology[all_SLA_LMA_pheno_means$Phenology == "D"] <- "0"
 all_SLA_LMA_pheno_means$Phenology[all_SLA_LMA_pheno_means$Phenology == "EV"] <- "1"
 
@@ -249,7 +250,75 @@ predict.glm(SLA.LMA.glm.predict.families)
 
 ###################### family level predictions?
 
+####logistic regression predictions on deciduous vs evergreen for fossils
 
+
+royer_data_split <-
+  royer_data %>% separate(binomial, c("genus", "species"))
+royer_data_split <- subset(royer_data_split, royer_data_split$genus %in% extant_over10_fossil_tax$scrubbed_genus)
+royer_data_split <- subset(royer_data_split, royer_data_split$species %in% extant_over10_fossil_tax$species)
+
+royer_data_split <- unique(royer_data_split)
+colnames(royer_data_split)[colnames(royer_data_split)=="leaf_area"] <- "avg_LA"
+glm_pred_data <- left_join(extant_over10_fossil_tax, royer_data_split, by = "avg_LA")
+glm_pred_data <- na.omit(glm_pred_data)
+glm_pred_data <- unique(glm_pred_data)
+glm_pred_data$phenology[glm_pred_data$phenology == "D"] <- "0"
+glm_pred_data$phenology[glm_pred_data$phenology == "E"] <- "1"
+glm_pred_data<-glm_pred_data[!grepl("\\*", glm_pred_data$phenology), ]
+glm_pred_data$phenology <- as.numeric(glm_pred_data$phenology)
+
+
+over10_glm_phen <- glm(phenology ~ log_lma, data = glm_pred_data, family = "binomial")
+over10_glm_phen_fam <- glm(phenology ~ log_lma+scrubbed_family, data = glm_pred_data, family = "binomial")
+extinct_over10_fossil_tax_glm <- extinct_over10_fossil_tax
+
+
+over10_glm_phen_aov <- anova(over10_glm_phen, over10_glm_phen_fam)
+
+
+names(extinct_over10_fossil_tax_glm)[names(extinct_over10_fossil_tax_glm) == 'log_LMA'] <- 'log_lma'
+
+over10_glm_phen_pred <- as.data.frame(predict.glm(over10_glm_phen, newdata = extinct_over10_fossil_tax_glm, type = "response"))
+names(over10_glm_phen_pred) = c("pred_nofam")
+
+over10_glm_phen_pred_fam <-as.data.frame(predict.glm(over10_glm_phen_fam, newdata = extinct_over10_fossil_tax_glm, type="response"))
+names(over10_glm_phen_pred_fam) = c("pred_fam")
+
+over10_glm_phen_pred_all <- cbind(over10_glm_phen_pred,over10_glm_phen_pred_fam)
+names(over10_glm_phen_pred_all) = c("pred_nofam","pred_fam")
+
+extinct_over10_fossil_tax_glm_preds <- cbind(extinct_over10_fossil_tax_glm,over10_glm_phen_pred_all)
+
+ggplot(extinct_over10_fossil_tax_glm_preds, 
+       aes(pred_nofam, pred_fam, 
+           group=(scrubbed_family),
+           color=scrubbed_family))+
+  labs(x="Predicted Phenlogy Without Taxinomic Information")+
+  labs(y="Predicted Phenlogy With Taxinomic Information")+
+  xlim(0,1)+
+  ylim(0,1)+
+  geom_point()
+
+
+
+#logisitc regression curve for nofam
+plot(extinct_over10_fossil_tax_glm_preds$log_lma, 
+     extinct_over10_fossil_tax_glm_preds$pred_nofam, xlab="log_lma", ylab="nofam")
+curve(predict(over10_glm_phen, data.frame(log_lma=x),type="resp"),add=TRUE)
+
+ggplot(glm_pred_data, aes(log_lma, phenology))+ 
+  geom_point() + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+
+#curve for fam
+plot(extinct_over10_fossil_tax_glm_preds$log_lma, 
+     extinct_over10_fossil_tax_glm_preds$pred_fam, xlab="log_lma",ylab="phenology")
+curve(predict(over10_glm_phen_fam, data.frame(log_lma=x),type="resp"),add=TRUE)
+
+ggplot(glm_pred_data, aes(log_lma, phenology, group=(scrubbed_family), color=scrubbed_family)) + 
+  geom_point() + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
 
 
 ##maybe phylogenetic signal will be useful?
