@@ -290,6 +290,9 @@ all_fossil_royer_pred <- left_join(all_fossil_LMEpred, fossil_tax, by = "scrubbe
 all_fossil_royer_pred <- na.omit(all_fossil_royer_pred)
 all_fossil_royer_pred <- unique(all_fossil_royer_pred)
 
+
+#test for github
+
 #clean data saving-------------------------------------------------------------------------------------------------
 saveRDS(WSLA_raw, file="~/Documents/BEIN data R/data/processed/00_WSLAraw.rds")
 saveRDS(WSLA, file="~/Documents/BEIN data R/data/processed/02_WSLAPhen.rds")
